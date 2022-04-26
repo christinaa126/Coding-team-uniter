@@ -10,7 +10,7 @@ class Manager extends Employee {
 
 
     getRole(){
-        console.log(`This employee is a manager`);
+        console.log(`This team member is a manager`);
     }
 
 
