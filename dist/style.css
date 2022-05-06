@@ -1,0 +1,14 @@
+header {
+    color: white;
+    background-image: linear-gradient(to right, rgb(78, 214, 238) , rgb(194, 82, 216));
+    text-align: center;
+    height: 100px;
+}
+
+header h1 {
+    padding: 1% 0%;
+}
+
+.teamCard {
+    margin-top: 5%;
+}
