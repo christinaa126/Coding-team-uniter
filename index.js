@@ -1,197 +1,190 @@
+const figlet = require("figlet");
 const inquirer = require("inquirer");
-const fs = require("fs");
+const fs = require("fs").promises;
 const Employee = require("./lib/Employee");
 const Intern = require("./lib/Intern");
 const Manager = require("./lib/Manager");
 const Engineer = require("./lib/Engineer");
-const teamMembers = [];
+const Team = require("./lib/Team");
+const generateHtml = require("./src/generateHTML");
 
-const generateHTML = require("./src/generateHTML");
+class CLI {
+  constructor() {
+    this.team = null;
+  }
 
-const init = () => {
-  inquirer
-    .prompt([
-      {
-        type: "input",
-        name: "name",
-        message: "What is the name of your team manager?",
-      },
-      {
-        type: "input",
-        name: "id",
-        message: "What is this team manager's id?",
-      },
-      {
-        type: "input",
-        name: "email",
-        message: "What is this team manager's email address?",
-      },
-      {
-        type: "input",
-        name: "officeNumber",
-        message: "What is this team manager's office number?",
-      },
-      {
-        type: "list",
-        name: "options",
-        message: "Which team member would you like to view next",
-        choices: ["Engineer", "Intern", "Done"],
-      },
-    ])
-    .then((answers) => {
-      console.log(answers);
-      const manager = new Manager(
-        answers.name,
-        answers.id,
-        answers.email,
-        answers.officeNumber
-      );
-      teamMembers.push(manager);
-    });
-  if (answers.options === "Engineer") {
-    return createEngineer();
-  } else if (answers.options === "Intern") {
-    return createIntern();
-  } else {
-    fs.appendFile("./dist/team.html", "</section></body></html>", (err) =>
+  start() {
+    new Promise((resolve, reject) => {
+      figlet("Team Profile Generator", function (err, data) {
+        if (err) {
+          reject(err);
+          return;
+        }
+        console.log(data);
+        resolve();
+      });
+    })
+      .catch(() => {
+        console.log("Welcome to Team Profile Generator");
+      })
+      .then(() => {
+        this.team = new Team();
+
+        this.addManager();
+      })
+      .catch((err) => this.handleError(err));
+  }
+
+  handleError(err) {
+    console.log(err);
+    console.log("Something went wrong. Scroll up to see details.");
+  }
+
+  addManager() {
+    return inquirer
+      .prompt([
+        {
+          type: "input",
+          message: "What is your team manager's name?",
+          name: "managerName",
+        },
+        {
+          type: "input",
+          message: "What is your team manager's ID?",
+          name: "managerId",
+        },
+        {
+          type: "input",
+          message: "What is your team manager's email?",
+          name: "managerEmail",
+        },
+        {
+          type: "input",
+          message: "What is your team manager's office number?",
+          name: "managerOfficeNumber",
+        },
+      ])
+      .then((data) => {
+        this.team.addManager(
+          data.managerName,
+          data.managerId,
+          data.managerEmail,
+          data.managerOfficeNumber
+        );
+
+        this.addMember();
+      });
+  }
+
+  generateEngineer() {
+    return inquirer
+      .prompt([
+        {
+          type: "input",
+          message: "What is your engineer's name?",
+          name: "engineerName",
+        },
+        {
+          type: "input",
+          message: "What is your engineer's ID number?",
+          name: "engineerId",
+        },
+        {
+          type: "input",
+          message: "What is your engineer's email address?",
+          name: "engineerEmail",
+        },
+        {
+          type: "input",
+          message: "What is your engineer's GitHub username?",
+          name: "engineerGithub",
+        },
+      ])
+      .then((data) => {
+        this.team.addEngineer(
+          data.engineerName,
+          data.engineerId,
+          data.engineerEmail,
+          data.engineerGithub
+        );
+
+        this.addMember();
+      });
+  }
+
+  generateIntern() {
+    return inquirer
+      .prompt([
+        {
+          type: "input",
+          message: "What is your intern's name?",
+          name: "internName",
+        },
+        {
+          type: "input",
+          message: "What is your intern's ID number?",
+          name: "internId",
+        },
+        {
+          type: "input",
+          message: "What is your intern's email address?",
+          name: "internEmail",
+        },
+        {
+          type: "input",
+          message: "What is your intern's school?",
+          name: "internSchool",
+        },
+      ])
+      .then((data) => {
+        this.team.addIntern(
+          data.internName,
+          data.internId,
+          data.internEmail,
+          data.internSchool
+        );
+
+        this.addMember();
+      });
+  }
+
+  addMember() {
+    return inquirer
+      .prompt([
+        {
+          type: "list",
+          message: "Which team member would you like to add?",
+          name: "memberType",
+          choices: ["Engineer", "Intern", "I am done"],
+        },
+      ])
+      .then((data) => {
+        let option = data.memberType;
+
+        if (option === "Engineer") {
+          this.generateEngineer();
+        } else if (option === "Intern") {
+          this.generateIntern();
+        } else {
+          return this.writeHtml();
+        }
+      })
+      .catch((err) => this.handleError(err));
+  }
+
+  writeHtml() {
+    // console.log(this.team);
+
+    const htmlPageContent = generateHtml(this.team.Employees);
+
+    fs.writeFile("dist/team.html", htmlPageContent, (err) =>
       err
         ? console.log(err)
         : console.log(
-            "Thanks for using the application, your team html will be under dist file."
+            "Created team.html file. You'll find it in the 'dist' folder."
           )
     );
-    // return;
   }
-};
+}
 
-const createEngineer = () => {
-  inquirer
-    .prompt([
-      {
-        type: "input",
-        name: "name",
-        message: "What is the name of your team engineer?",
-      },
-      {
-        type: "input",
-        name: "id",
-        message: "What is this engineer's id?",
-      },
-      {
-        type: "input",
-        name: "email",
-        message: "What is this engineer's email?",
-      },
-      {
-        type: "input",
-        name: "github",
-        message: "What is this engineer's github username?",
-      },
-      {
-        type: "list",
-        message: "Which type of team member would you like to add?",
-        name: "addMember",
-        choices: [
-          "Engineer",
-          "Intern",
-          "I don't want to add any more team members",
-        ],
-      },
-    ])
-    .then((answers) => {
-      console.log(answers);
-      const engineer = new Engineer(
-        answers.name,
-        answers.id,
-        answers.email,
-        answers.github
-      );
-      teamMembers.push(engineer);
-      fs.appendFile("./dist/team.html", engineerContent, (err) => {
-        if (err) {
-          console.log(err);
-        }
-      });
-      if (answers.options === "Engineer") {
-        return createEngineer();
-      } else if (answers.options === "Intern") {
-        return createIntern();
-      } else {
-        fs.appendFile("./dist/team.html", "</section></body></html>", (err) =>
-          err
-            ? console.log(err)
-            : console.log(
-                "Thanks for using the application, your team html will be under dist file."
-              )
-        );
-        return;
-      }
-    });
-};
-
-const createIntern = () => {
-  inquirer
-    .prompt([
-      {
-        type: "input",
-        name: "name",
-        message: "What is the name of your team intern?",
-      },
-      {
-        type: "input",
-        name: "id",
-        message: "What is this intern's id?",
-      },
-      {
-        type: "input",
-        name: "email",
-        message: "What is this intern's email?",
-      },
-      {
-        type: "input",
-        name: "school",
-        message: "What is this intern's school?",
-      },
-      {
-        type: "list",
-        message: "Which type of team member would you like to add?",
-        name: "addMember",
-        choices: [
-          "Engineer",
-          "Intern",
-          "I don't want to add any more team members",
-        ],
-      },
-    ])
-    .then((answers) => {
-      console.log(answers);
-      const intern = new Intern(
-        answers.name,
-        answers.id,
-        answers.email,
-        answers.school
-      );
-      teamMembers.push(intern);
-      fs.appendFile("./dist/team.html", internContent, (err) => {
-        if (err) {
-          console.log(err);
-        }
-      });
-      if (answers.options === "Engineer") {
-        return createEngineer();
-      } else if (answers.options === "Intern") {
-        return createIntern();
-      } else {
-        fs.appendFile("./dist/team.html", "</section></body></html>", (err) =>
-          err
-            ? console.log(err)
-            : console.log(
-                "Thanks for using the application, your team html will be under dist file."
-              )
-        );
-        return;
-      }
-    });
-};
-
-init();
+new CLI().start();
